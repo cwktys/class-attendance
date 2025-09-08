@@ -160,64 +160,64 @@
             </div>
         </div>
 
-        <!-- 桌面版：緊湊一屏布局 -->
-        <div class="hidden md:grid grid-rows-[auto_1fr] h-screen max-h-screen py-2 gap-2">
-            <!-- 頂部區域：校徽、統計、警示、標題、按鈕 -->
-            <div class="grid grid-cols-4 gap-3">
-                <!-- 校徽 -->
+        <!-- 桌面版：一屏顯示所有資訊 -->
+        <div class="hidden md:grid grid-rows-[auto_auto_1fr] h-screen max-h-screen overflow-hidden p-2 gap-1">
+            <!-- 頂部第一行：校徽、統計、標題+按鈕 -->
+            <div class="grid grid-cols-5 gap-2">
+                <!-- 校徽 - 更小 -->
                 <div class="flex justify-center items-center">
                     <img src="https://pfst.cf2.poecdn.net/base/image/d1bac803e09e2aa47fef77acb1020b7332c5512b872f9ac730ecee837ec17c8e?w=200&h=237" 
                          alt="校徽" 
-                         class="w-32 h-40 object-contain">
+                         class="w-24 h-28 object-contain">
                 </div>
                 
-                <!-- 統計資訊 -->
-                <div class="flex flex-col gap-2">
-                    <div class="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3 text-center">
+                <!-- 📊統計資訊 - 緊湊，佔2列 -->
+                <div class="flex flex-col gap-1 col-span-2">
+                    <div class="bg-blue-50 dark:bg-blue-900/30 rounded p-2 text-center">
                         <div class="text-2xl font-bold text-blue-600 dark:text-blue-400" id="totalClasses">0</div>
                         <div class="text-blue-800 dark:text-blue-300 text-xs font-medium">總班級數</div>
                     </div>
-                    <div class="bg-green-50 dark:bg-green-900/30 rounded-lg p-3 text-center">
+                    <div class="bg-green-50 dark:bg-green-900/30 rounded p-2 text-center">
                         <div class="text-2xl font-bold text-green-600 dark:text-green-400" id="arrivedClasses">0</div>
                         <div class="text-green-800 dark:text-green-300 text-xs font-medium">已到達</div>
                     </div>
-                    <div class="bg-orange-50 dark:bg-orange-900/30 rounded-lg p-3 text-center">
+                    <div class="bg-orange-50 dark:bg-orange-900/30 rounded p-2 text-center">
                         <div class="text-2xl font-bold text-orange-600 dark:text-orange-400" id="pendingClasses">0</div>
                         <div class="text-orange-800 dark:text-orange-300 text-xs font-medium">未到達</div>
                     </div>
                 </div>
                 
-                <!-- 尚未到達班級警示區 -->
-                <div class="flex items-start" id="pendingAlert">
-                    <!-- 將由 JavaScript 動態生成 -->
-                </div>
-                
-                <!-- 標題和控制按鈕 -->
-                <div class="flex flex-col justify-center">
-                    <div class="text-center mb-3">
-                        <h1 class="text-xl font-bold text-gray-800 dark:text-white mb-1">
+                <!-- 📝標題和控制按鈕 - 更低調，佔2列 -->
+                <div class="flex flex-col justify-center items-center col-span-2">
+                    <div class="text-center">
+                        <h1 class="text-xs font-light text-gray-400 dark:text-gray-600 mb-1">
                             班級到達操場管理
                         </h1>
-                        <p class="text-gray-600 dark:text-gray-300 text-sm">
-                            點擊班級按鈕來標記到達狀態
+                        <p class="text-gray-300 dark:text-gray-700 text-xs mb-1">
+                            點擊班級按鈕來標記到達狀態 - 即時同步
                         </p>
-                    </div>
-                    
-                    <div class="flex gap-2 justify-center">
-                        <button onclick="resetAll()" 
-                                class="px-3 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors duration-200 text-sm">
-                            重置全部
-                        </button>
-                        <button onclick="markAllArrived()" 
-                                class="px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors duration-200 text-sm">
-                            全部到達
-                        </button>
+                        
+                        <div class="flex gap-2 justify-center">
+                            <button onclick="resetAll()" 
+                                    class="px-2 py-1 bg-gray-200 hover:bg-gray-300 text-gray-600 rounded text-xs font-light transition-colors duration-200">
+                                重置全部
+                            </button>
+                            <button onclick="markAllArrived()" 
+                                    class="px-2 py-1 bg-green-200 hover:bg-green-300 text-green-600 rounded text-xs font-light transition-colors duration-200">
+                                全部到達
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 班級列表 - 填滿剩餘空間 -->
-            <div class="grid grid-cols-4 gap-3 content-start" id="classGrid">
+            <!-- 🚨警示區域 - 獨立一行，緊湊 -->
+            <div class="w-full" id="pendingAlert">
+                <!-- 將由 JavaScript 動態生成 -->
+            </div>
+
+            <!-- 班級列表 - 填滿剩餘空間，4x3排列 -->
+            <div class="grid grid-cols-4 grid-rows-3 gap-2 h-full" id="classGrid">
                 <!-- 班級卡片將由 JavaScript 動態生成 -->
             </div>
         </div>
@@ -450,23 +450,32 @@
                     </div>
                 `;
             } else {
-                // 簡單排列，不按年級分組，每行最多3個班級
+                // 固定4行3列排列，確保整齊 - 字體放大
                 const pendingList = pendingClasses.map(cls => 
-                    `<span class="inline-flex items-center justify-center w-12 h-12 text-lg font-bold bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 mx-1 mb-2">
+                    `<div class="flex items-center justify-center w-16 h-16 text-2xl font-black bg-red-200 text-red-900 dark:bg-red-900/40 dark:text-red-300 rounded-lg border border-red-300 dark:border-red-600">
                         ${cls.name}
-                    </span>`
+                    </div>`
                 ).join('');
                 
-                const gradeRows = `<div class="grid grid-cols-4 gap-1">${pendingList}</div>`;
+                // 補齊空位以保持網格完整
+                const totalSlots = 12;
+                const emptySlots = totalSlots - pendingClasses.length;
+                const emptyList = Array(emptySlots).fill('').map(() => 
+                    `<div class="w-16 h-16"></div>`
+                ).join('');
+                
+                const gradeRows = `<div class="grid grid-cols-4 grid-rows-3 gap-4">${pendingList}${emptyList}</div>`;
                 
                 pendingAlertDiv.innerHTML = `
-                    <div class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg p-4">
+                    <div class="bg-red-100 dark:bg-red-900/50 border-4 border-red-600 dark:border-red-500 rounded-xl p-4 shadow-2xl">
                         <div class="flex items-center mb-3">
-                            <span class="text-2xl mr-2">🚨</span>
-                            <span class="text-lg font-bold text-red-800 dark:text-red-300">尚未到達的班級</span>
-                            <span class="ml-2 px-2 py-1 text-sm font-bold bg-red-600 text-white rounded">
-                                ${pendingClasses.length}
-                            </span>
+                            <span class="text-5xl mr-3">🚨</span>
+                            <div class="flex-1">
+                                <span class="text-2xl font-black text-red-900 dark:text-red-200 block mb-1">尚未到達的班級</span>
+                                <span class="px-3 py-1 text-lg font-bold bg-red-700 text-white rounded-lg shadow-lg">
+                                    ${pendingClasses.length} 個班級
+                                </span>
+                            </div>
                         </div>
                         ${gradeRows}
                     </div>
