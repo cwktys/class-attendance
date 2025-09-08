@@ -20,6 +20,7 @@
             storageBucket: "classroom-tracker-demo.firebasestorage.app",
             messagingSenderId: "889652567824",
             appId: "1:889652567824:web:e9017d7dc072b0c8624f95"
+
         };
 
         // 初始化 Firebase
@@ -373,27 +374,14 @@
                     </div>
                 `;
             } else {
-                // 按年級分組
-                const gradeGroups = {};
-                pendingClasses.forEach(cls => {
-                    if (!gradeGroups[cls.grade]) {
-                        gradeGroups[cls.grade] = [];
-                    }
-                    gradeGroups[cls.grade].push(cls);
-                });
+                // 簡單排列，不按年級分組，每行最多3個班級
+                const pendingList = pendingClasses.map(cls => 
+                    `<span class="inline-flex items-center justify-center w-16 h-16 text-2xl font-bold bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 mx-2 mb-3">
+                        ${cls.name}
+                    </span>`
+                ).join('');
                 
-                // 按年級順序生成HTML
-                const gradeRows = [1, 2, 3].map(grade => {
-                    if (!gradeGroups[grade] || gradeGroups[grade].length === 0) return '';
-                    
-                    const gradeClasses = gradeGroups[grade].map(cls => 
-                        `<span class="inline-flex items-center justify-center w-16 h-16 text-2xl font-bold bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 mx-2 mb-2">
-                            ${cls.name}
-                        </span>`
-                    ).join('');
-                    
-                    return `<div class="flex flex-wrap mb-3">${gradeClasses}</div>`;
-                }).filter(row => row !== '').join('');
+                const gradeRows = `<div class="grid grid-cols-3 gap-2">${pendingList}</div>`;
                 
                 pendingAlertDiv.innerHTML = `
                     <div class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg p-6">
