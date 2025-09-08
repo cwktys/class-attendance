@@ -100,16 +100,48 @@
 
     <div class="container mx-auto px-2 py-4 max-w-7xl">
         <!-- 校徽、統計資訊和尚未到達班級 -->
-        <div class="grid grid-cols-3 gap-4 mb-4">
+        <div class="flex flex-col md:grid md:grid-cols-3 gap-3 mb-4">
+            <!-- 手機版：頂部橫向布局 -->
+            <div class="flex md:hidden gap-3 mb-3">
+                <!-- 校徽 -->
+                <div class="flex-shrink-0">
+                    <img src="https://pfst.cf2.poecdn.net/base/image/d1bac803e09e2aa47fef77acb1020b7332c5512b872f9ac730ecee837ec17c8e?w=200&h=237" 
+                         alt="校徽" 
+                         class="w-20 h-24 object-contain">
+                </div>
+                
+                <!-- 統計資訊 -->
+                <div class="flex gap-2 flex-1">
+                    <div class="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-2 text-center flex-1">
+                        <div class="text-lg font-bold text-blue-600 dark:text-blue-400" id="totalClassesMobile">0</div>
+                        <div class="text-blue-800 dark:text-blue-300 text-xs">總數</div>
+                    </div>
+                    <div class="bg-green-50 dark:bg-green-900/30 rounded-lg p-2 text-center flex-1">
+                        <div class="text-lg font-bold text-green-600 dark:text-green-400" id="arrivedClassesMobile">0</div>
+                        <div class="text-green-800 dark:text-green-300 text-xs">已到達</div>
+                    </div>
+                    <div class="bg-orange-50 dark:bg-orange-900/30 rounded-lg p-2 text-center flex-1">
+                        <div class="text-lg font-bold text-orange-600 dark:text-orange-400" id="pendingClassesMobile">0</div>
+                        <div class="text-orange-800 dark:text-orange-300 text-xs">未到達</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 手機版：尚未到達班級警示區 -->
+            <div class="md:hidden" id="pendingAlertMobile">
+                <!-- 將由 JavaScript 動態生成 -->
+            </div>
+            
+            <!-- 桌面版：原有布局 -->
             <!-- 校徽 -->
-            <div class="flex justify-center items-center">
+            <div class="hidden md:flex justify-center items-center">
                 <img src="https://pfst.cf2.poecdn.net/base/image/d1bac803e09e2aa47fef77acb1020b7332c5512b872f9ac730ecee837ec17c8e?w=200&h=237" 
                      alt="校徽" 
                      class="w-32 h-36 md:w-40 md:h-48 object-contain">
             </div>
             
             <!-- 統計資訊 -->
-            <div class="flex flex-col gap-3">
+            <div class="hidden md:flex flex-col gap-3">
                 <div class="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-5 text-center">
                     <div class="text-3xl font-bold text-blue-600 dark:text-blue-400" id="totalClasses">0</div>
                     <div class="text-blue-800 dark:text-blue-300 text-sm font-medium">總班級數</div>
@@ -125,7 +157,7 @@
             </div>
             
             <!-- 尚未到達班級警示區 -->
-            <div class="flex items-start" id="pendingAlert">
+            <div class="hidden md:flex items-start" id="pendingAlert">
                 <!-- 將由 JavaScript 動態生成 -->
             </div>
         </div>
@@ -351,11 +383,18 @@
             const arrived = Object.values(classStatus).filter(status => status).length;
             const pending = total - arrived;
 
+            // 桌面版
             document.getElementById('totalClasses').textContent = total;
             document.getElementById('arrivedClasses').textContent = arrived;
             document.getElementById('pendingClasses').textContent = pending;
             
+            // 手機版
+            document.getElementById('totalClassesMobile').textContent = total;
+            document.getElementById('arrivedClassesMobile').textContent = arrived;
+            document.getElementById('pendingClassesMobile').textContent = pending;
+            
             updatePendingAlert();
+            updatePendingAlertMobile();
         }
 
         // 更新尚未到達班級警示區
@@ -393,6 +432,45 @@
                             </span>
                         </div>
                         ${gradeRows}
+                    </div>
+                `;
+            }
+        }
+
+        // 更新手機版尚未到達班級警示區
+        function updatePendingAlertMobile() {
+            const pendingAlertDiv = document.getElementById('pendingAlertMobile');
+            const pendingClasses = classes.filter(cls => !classStatus[cls.id]);
+            
+            if (pendingClasses.length === 0) {
+                pendingAlertDiv.innerHTML = `
+                    <div class="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg p-3 text-center">
+                        <div class="flex items-center justify-center">
+                            <span class="text-lg mr-2">🎉</span>
+                            <span class="text-sm font-semibold text-green-800 dark:text-green-300">全部班級已到達！</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // 手機版：更緊湊的顯示
+                const pendingList = pendingClasses.map(cls => 
+                    `<span class="inline-flex items-center justify-center w-10 h-10 text-sm font-bold bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                        ${cls.name}
+                    </span>`
+                ).join('');
+                
+                pendingAlertDiv.innerHTML = `
+                    <div class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg p-3">
+                        <div class="flex items-center mb-2">
+                            <span class="text-lg mr-2">🚨</span>
+                            <span class="text-sm font-bold text-red-800 dark:text-red-300">尚未到達的班級</span>
+                            <span class="ml-2 px-2 py-1 text-xs font-bold bg-red-600 text-white rounded">
+                                ${pendingClasses.length}
+                            </span>
+                        </div>
+                        <div class="grid grid-cols-6 gap-1">
+                            ${pendingList}
+                        </div>
                     </div>
                 `;
             }
