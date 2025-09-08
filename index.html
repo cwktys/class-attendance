@@ -5,6 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>班級到達操場管理系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getDatabase, ref, set, get, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+
+        // 🔥 請將下面的設定改為您從Firebase複製的設定
+        const firebaseConfig = {
+            apiKey: "AIzaSyAqLitpQ-W2EFVJb5ytlh_fFaXEfGdsOns",
+            authDomain: "classroom-tracker-demo.firebaseapp.com",
+            databaseURL: "ttps://classroom-tracker-demo-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "classroom-tracker-demo",
+            storageBucket: "classroom-tracker-demo.firebasestorage.app",
+            messagingSenderId: "889652567824",
+            appId: "1:889652567824:web:e9017d7dc072b0c8624f95"
+        };
+
+        // 初始化 Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // 讓其他腳本可以使用 database
+        window.database = database;
+        window.dbRef = ref;
+        window.dbSet = set;
+        window.dbGet = get;
+        window.dbOnValue = onValue;
+    </script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap');
         
@@ -25,6 +54,27 @@
         .status-badge {
             transition: all 0.3s ease;
         }
+
+        .connection-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            z-index: 1000;
+        }
+
+        .connected {
+            background-color: #10B981;
+            color: white;
+        }
+
+        .disconnected {
+            background-color: #EF4444;
+            color: white;
+        }
     </style>
     <script>
         tailwind.config = {
@@ -42,6 +92,11 @@
     </script>
 </head>
 <body class="bg-white dark:bg-gray-900 min-h-screen transition-colors duration-300">
+    <!-- 連線狀態指示 -->
+    <div id="connectionStatus" class="connection-status disconnected">
+        🔴 離線
+    </div>
+
     <div class="container mx-auto px-2 py-4 max-w-7xl">
         <!-- 標題區域 -->
         <div class="text-center mb-4">
@@ -49,7 +104,7 @@
                 班級到達操場管理
             </h1>
             <p class="text-gray-600 dark:text-gray-300 text-base">
-                點擊班級按鈕來標記到達狀態
+                點擊班級按鈕來標記到達狀態 - 即時同步
             </p>
         </div>
 
@@ -123,11 +178,81 @@
 
         // 班級狀態
         let classStatus = {};
+        let isFirebaseReady = false;
+
+        // 等待 Firebase 初始化
+        function waitForFirebase() {
+            if (window.database) {
+                isFirebaseReady = true;
+                setupFirebaseListeners();
+                updateConnectionStatus(true);
+                loadDataFromFirebase();
+            } else {
+                setTimeout(waitForFirebase, 100);
+            }
+        }
+
+        // 設置 Firebase 監聽器
+        function setupFirebaseListeners() {
+            const statusRef = window.dbRef(window.database, 'classStatus');
+            window.dbOnValue(statusRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    classStatus = data;
+                    renderClasses();
+                }
+            });
+        }
+
+        // 從 Firebase 載入資料
+        async function loadDataFromFirebase() {
+            try {
+                const statusRef = window.dbRef(window.database, 'classStatus');
+                const snapshot = await window.dbGet(statusRef);
+                if (snapshot.exists()) {
+                    classStatus = snapshot.val();
+                } else {
+                    // 如果沒有資料，初始化預設狀態
+                    initializeClasses();
+                    await saveToFirebase();
+                }
+                renderClasses();
+            } catch (error) {
+                console.error('載入資料失敗:', error);
+                updateConnectionStatus(false);
+                initializeClasses();
+                renderClasses();
+            }
+        }
+
+        // 儲存到 Firebase
+        async function saveToFirebase() {
+            if (!isFirebaseReady) return;
+            try {
+                const statusRef = window.dbRef(window.database, 'classStatus');
+                await window.dbSet(statusRef, classStatus);
+            } catch (error) {
+                console.error('儲存失敗:', error);
+                updateConnectionStatus(false);
+            }
+        }
+
+        // 更新連線狀態顯示
+        function updateConnectionStatus(connected) {
+            const statusEl = document.getElementById('connectionStatus');
+            if (connected) {
+                statusEl.className = 'connection-status connected';
+                statusEl.innerHTML = '🟢 已連線';
+            } else {
+                statusEl.className = 'connection-status disconnected';
+                statusEl.innerHTML = '🔴 離線';
+            }
+        }
 
         // 初始化班級狀態
         function initializeClasses() {
             classes.forEach(cls => {
-                classStatus[cls.id] = false; // false = 未到達, true = 已到達
+                classStatus[cls.id] = false;
             });
         }
 
@@ -167,10 +292,7 @@
             const colors = {
                 1: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
                 2: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
-                3: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-                4: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-                5: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-                6: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400'
+                3: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
             };
             return colors[grade] || 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
         }
@@ -183,35 +305,32 @@
         }
 
         // 切換班級狀態
-        function toggleClassStatus(classId) {
+        async function toggleClassStatus(classId) {
             classStatus[classId] = !classStatus[classId];
             
-            // 添加動畫效果
-            const card = event.target.closest('div.bg-white, div.bg-gray-800');
-            if (classStatus[classId]) {
-                card.classList.add('arrived');
-                setTimeout(() => {
-                    card.classList.remove('arrived');
-                }, 2000);
-            }
-            
+            // 立即更新UI
             renderClasses();
+            
+            // 儲存到 Firebase
+            await saveToFirebase();
         }
 
         // 重置全部
-        function resetAll() {
+        async function resetAll() {
             Object.keys(classStatus).forEach(classId => {
                 classStatus[classId] = false;
             });
             renderClasses();
+            await saveToFirebase();
         }
 
         // 標記全部到達
-        function markAllArrived() {
+        async function markAllArrived() {
             Object.keys(classStatus).forEach(classId => {
                 classStatus[classId] = true;
             });
             renderClasses();
+            await saveToFirebase();
         }
 
         // 更新統計資訊
@@ -224,7 +343,6 @@
             document.getElementById('arrivedClasses').textContent = arrived;
             document.getElementById('pendingClasses').textContent = pending;
             
-            // 更新尚未到達班級警示區
             updatePendingAlert();
         }
 
@@ -234,7 +352,6 @@
             const pendingClasses = classes.filter(cls => !classStatus[cls.id]);
             
             if (pendingClasses.length === 0) {
-                // 全部班級已到達
                 pendingAlertDiv.innerHTML = `
                     <div class="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg p-4 text-center">
                         <div class="flex items-center justify-center mb-2">
@@ -245,7 +362,6 @@
                     </div>
                 `;
             } else {
-                // 顯示尚未到達的班級
                 const pendingList = pendingClasses.map(cls => 
                     `<span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 mx-1 mb-2">
                         ${cls.name}
@@ -271,8 +387,10 @@
 
         // 初始化應用
         function initApp() {
+            updateConnectionStatus(false);
             initializeClasses();
             renderClasses();
+            waitForFirebase();
         }
 
         // 啟動應用
