@@ -160,65 +160,33 @@
             </div>
         </div>
 
-        <!-- 桌面版：一屏顯示所有資訊 -->
-        <div class="hidden md:grid grid-rows-[auto_auto_1fr] h-screen max-h-screen overflow-hidden p-2 gap-1">
-            <!-- 頂部第一行：校徽、統計、標題+按鈕 -->
-            <div class="grid grid-cols-5 gap-2">
-                <!-- 校徽 - 更小 -->
+        <!-- 桌面版：簡潔版 - 只顯示校徽、已到達班級和按鈕 -->
+        <div class="hidden md:flex flex-col h-screen max-h-screen overflow-hidden p-4 gap-4">
+            <!-- 頂部：校徽和控制按鈕 -->
+            <div class="flex items-center justify-between">
+                <!-- 校徽 -->
                 <div class="flex justify-center items-center">
                     <img src="https://pfst.cf2.poecdn.net/base/image/d1bac803e09e2aa47fef77acb1020b7332c5512b872f9ac730ecee837ec17c8e?w=200&h=237" 
                          alt="校徽" 
-                         class="w-24 h-28 object-contain">
+                         class="w-32 h-36 object-contain">
                 </div>
                 
-                <!-- 📊統計資訊 - 緊湊，佔2列 -->
-                <div class="flex flex-col gap-1 col-span-2">
-                    <div class="bg-blue-50 dark:bg-blue-900/30 rounded p-2 text-center">
-                        <div class="text-2xl font-bold text-blue-600 dark:text-blue-400" id="totalClasses">0</div>
-                        <div class="text-blue-800 dark:text-blue-300 text-xs font-medium">總班級數</div>
-                    </div>
-                    <div class="bg-green-50 dark:bg-green-900/30 rounded p-2 text-center">
-                        <div class="text-2xl font-bold text-green-600 dark:text-green-400" id="arrivedClasses">0</div>
-                        <div class="text-green-800 dark:text-green-300 text-xs font-medium">已到達</div>
-                    </div>
-                    <div class="bg-orange-50 dark:bg-orange-900/30 rounded p-2 text-center">
-                        <div class="text-2xl font-bold text-orange-600 dark:text-orange-400" id="pendingClasses">0</div>
-                        <div class="text-orange-800 dark:text-orange-300 text-xs font-medium">未到達</div>
-                    </div>
-                </div>
-                
-                <!-- 📝標題和控制按鈕 - 更低調，佔2列 -->
-                <div class="flex flex-col justify-center items-center col-span-2">
-                    <div class="text-center">
-                        <h1 class="text-xs font-light text-gray-400 dark:text-gray-600 mb-1">
-                            班級到達操場管理
-                        </h1>
-                        <p class="text-gray-300 dark:text-gray-700 text-xs mb-1">
-                            點擊班級按鈕來標記到達狀態 - 即時同步
-                        </p>
-                        
-                        <div class="flex gap-2 justify-center">
-                            <button onclick="resetAll()" 
-                                    class="px-2 py-1 bg-gray-200 hover:bg-gray-300 text-gray-600 rounded text-xs font-light transition-colors duration-200">
-                                重置全部
-                            </button>
-                            <button onclick="markAllArrived()" 
-                                    class="px-2 py-1 bg-green-200 hover:bg-green-300 text-green-600 rounded text-xs font-light transition-colors duration-200">
-                                全部到達
-                            </button>
-                        </div>
-                    </div>
+                <!-- 控制按鈕 -->
+                <div class="flex gap-3">
+                    <button onclick="resetAll()" 
+                            class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors duration-200">
+                        重置全部
+                    </button>
+                    <button onclick="markAllArrived()" 
+                            class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors duration-200">
+                        全部到達
+                    </button>
                 </div>
             </div>
 
-            <!-- 🚨警示區域 - 獨立一行，緊湊 -->
-            <div class="w-full" id="pendingAlert">
+            <!-- 已到達班級顯示區域 - 填滿剩餘空間 -->
+            <div class="flex-1 w-full" id="pendingAlert">
                 <!-- 將由 JavaScript 動態生成 -->
-            </div>
-
-            <!-- 班級列表 - 填滿剩餘空間，4x3排列 -->
-            <div class="grid grid-cols-4 grid-rows-3 gap-2 h-full" id="classGrid">
-                <!-- 班級卡片將由 JavaScript 動態生成 -->
             </div>
         </div>
     </div>
@@ -434,46 +402,57 @@
             updatePendingAlertMobile();
         }
 
-        // 更新尚未到達班級警示區
+        // 更新已到達班級顯示區
         function updatePendingAlert() {
             const pendingAlertDiv = document.getElementById('pendingAlert');
-            const pendingClasses = classes.filter(cls => !classStatus[cls.id]);
+            const arrivedClasses = classes.filter(cls => classStatus[cls.id]);
             
-            if (pendingClasses.length === 0) {
+            if (arrivedClasses.length === 0) {
                 pendingAlertDiv.innerHTML = `
-                    <div class="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg p-4 text-center">
+                    <div class="bg-gray-50 dark:bg-gray-800/30 border border-gray-200 dark:border-gray-700 rounded-lg p-4 text-center">
                         <div class="flex items-center justify-center mb-2">
-                            <span class="text-2xl mr-2">🎉</span>
-                            <span class="text-lg font-semibold text-green-800 dark:text-green-300">全部班級已到達！</span>
+                            <span class="text-2xl mr-2">⏳</span>
+                            <span class="text-lg font-semibold text-gray-600 dark:text-gray-400">尚無班級到達</span>
                         </div>
-                        <p class="text-green-600 dark:text-green-400 text-sm">所有班級都已安全到達操場</p>
+                        <p class="text-gray-500 dark:text-gray-500 text-sm">班級到達後會顯示在這裡</p>
                     </div>
                 `;
             } else {
-                // 固定4行3列排列，確保整齊 - 字體放大
-                const pendingList = pendingClasses.map(cls => 
-                    `<div class="flex items-center justify-center w-16 h-16 text-2xl font-black bg-red-200 text-red-900 dark:bg-red-900/40 dark:text-red-300 rounded-lg border border-red-300 dark:border-red-600">
+                // 為每個年級分配對比色
+                const getClassColor = (className) => {
+                    const grade = className.charAt(0); // 取得年級數字
+                    const colors = {
+                        '1': 'bg-red-300 text-red-900 border-red-400 dark:bg-red-700/60 dark:text-red-100 dark:border-red-500', // 1年級：紅色系（對比綠色）
+                        '2': 'bg-blue-300 text-blue-900 border-blue-400 dark:bg-blue-700/60 dark:text-blue-100 dark:border-blue-500', // 2年級：藍色系（對比綠色）
+                        '3': 'bg-purple-300 text-purple-900 border-purple-400 dark:bg-purple-700/60 dark:text-purple-100 dark:border-purple-500' // 3年級：紫色系（對比綠色）
+                    };
+                    return colors[grade] || 'bg-gray-300 text-gray-900 border-gray-400 dark:bg-gray-700/60 dark:text-gray-100 dark:border-gray-500';
+                };
+
+                // 固定4行3列排列，確保整齊 - 每個班級不同顏色
+                const arrivedList = arrivedClasses.map(cls => 
+                    `<div class="flex items-center justify-center w-16 h-16 text-2xl font-black ${getClassColor(cls.name)} rounded-lg border">
                         ${cls.name}
                     </div>`
                 ).join('');
                 
                 // 補齊空位以保持網格完整
                 const totalSlots = 12;
-                const emptySlots = totalSlots - pendingClasses.length;
+                const emptySlots = totalSlots - arrivedClasses.length;
                 const emptyList = Array(emptySlots).fill('').map(() => 
                     `<div class="w-16 h-16"></div>`
                 ).join('');
                 
-                const gradeRows = `<div class="grid grid-cols-4 grid-rows-3 gap-4">${pendingList}${emptyList}</div>`;
+                const gradeRows = `<div class="grid grid-cols-4 grid-rows-3 gap-4">${arrivedList}${emptyList}</div>`;
                 
                 pendingAlertDiv.innerHTML = `
-                    <div class="bg-red-100 dark:bg-red-900/50 border-4 border-red-600 dark:border-red-500 rounded-xl p-4 shadow-2xl">
+                    <div class="bg-green-100 dark:bg-green-900/50 border-4 border-green-600 dark:border-green-500 rounded-xl p-4 shadow-2xl">
                         <div class="flex items-center mb-3">
-                            <span class="text-5xl mr-3">🚨</span>
+                            <span class="text-5xl mr-3">✅</span>
                             <div class="flex-1">
-                                <span class="text-2xl font-black text-red-900 dark:text-red-200 block mb-1">尚未到達的班級</span>
-                                <span class="px-3 py-1 text-lg font-bold bg-red-700 text-white rounded-lg shadow-lg">
-                                    ${pendingClasses.length} 個班級
+                                <span class="text-2xl font-black text-green-900 dark:text-green-200 block mb-1">已到達的班級</span>
+                                <span class="px-3 py-1 text-lg font-bold bg-green-700 text-white rounded-lg shadow-lg">
+                                    ${arrivedClasses.length} 個班級
                                 </span>
                             </div>
                         </div>
@@ -483,39 +462,50 @@
             }
         }
 
-        // 更新手機版尚未到達班級警示區
+        // 更新手機版已到達班級顯示區
         function updatePendingAlertMobile() {
             const pendingAlertDiv = document.getElementById('pendingAlertMobile');
-            const pendingClasses = classes.filter(cls => !classStatus[cls.id]);
+            const arrivedClasses = classes.filter(cls => classStatus[cls.id]);
             
-            if (pendingClasses.length === 0) {
+            if (arrivedClasses.length === 0) {
                 pendingAlertDiv.innerHTML = `
-                    <div class="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg p-3 text-center">
+                    <div class="bg-gray-50 dark:bg-gray-800/30 border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-center">
                         <div class="flex items-center justify-center">
-                            <span class="text-lg mr-2">🎉</span>
-                            <span class="text-sm font-semibold text-green-800 dark:text-green-300">全部班級已到達！</span>
+                            <span class="text-lg mr-2">⏳</span>
+                            <span class="text-sm font-semibold text-gray-600 dark:text-gray-400">尚無班級到達</span>
                         </div>
                     </div>
                 `;
             } else {
-                // 手機版：更緊湊的顯示
-                const pendingList = pendingClasses.map(cls => 
-                    `<span class="inline-flex items-center justify-center w-10 h-10 text-sm font-bold bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                // 為每個年級分配對比色 (手機版)
+                const getClassColorMobile = (className) => {
+                    const grade = className.charAt(0); // 取得年級數字
+                    const colors = {
+                        '1': 'bg-red-200 text-red-800 dark:bg-red-800/40 dark:text-red-200', // 1年級：紅色系（對比綠色）
+                        '2': 'bg-blue-200 text-blue-800 dark:bg-blue-800/40 dark:text-blue-200', // 2年級：藍色系（對比綠色）
+                        '3': 'bg-purple-200 text-purple-800 dark:bg-purple-800/40 dark:text-purple-200' // 3年級：紫色系（對比綠色）
+                    };
+                    return colors[grade] || 'bg-gray-200 text-gray-800 dark:bg-gray-800/40 dark:text-gray-200';
+                };
+
+                // 手機版：更緊湊的顯示 - 每個班級不同顏色
+                const arrivedList = arrivedClasses.map(cls => 
+                    `<span class="inline-flex items-center justify-center w-10 h-10 text-sm font-bold ${getClassColorMobile(cls.name)}">
                         ${cls.name}
                     </span>`
                 ).join('');
                 
                 pendingAlertDiv.innerHTML = `
-                    <div class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg p-3">
+                    <div class="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg p-3">
                         <div class="flex items-center mb-2">
-                            <span class="text-lg mr-2">🚨</span>
-                            <span class="text-sm font-bold text-red-800 dark:text-red-300">尚未到達的班級</span>
-                            <span class="ml-2 px-2 py-1 text-xs font-bold bg-red-600 text-white rounded">
-                                ${pendingClasses.length}
+                            <span class="text-lg mr-2">✅</span>
+                            <span class="text-sm font-bold text-green-800 dark:text-green-300">已到達的班級</span>
+                            <span class="ml-2 px-2 py-1 text-xs font-bold bg-green-600 text-white rounded">
+                                ${arrivedClasses.length}
                             </span>
                         </div>
                         <div class="grid grid-cols-6 gap-1">
-                            ${pendingList}
+                            ${arrivedList}
                         </div>
                     </div>
                 `;
