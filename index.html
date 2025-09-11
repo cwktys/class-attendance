@@ -417,9 +417,9 @@
                     return colors[grade] || 'bg-gray-300 text-gray-900 border-gray-400 dark:bg-gray-700/60 dark:text-gray-100 dark:border-gray-500';
                 };
 
-                // 針對1920x1080優化，更大的班級名稱字體
+                // 針對1920x1080優化，超大班級名稱字體（接近校徽大小）
                 const arrivedList = arrivedClasses.map(cls => 
-                    `<div class="flex items-center justify-center w-24 h-24 text-4xl font-black ${getClassColor(cls.name)} rounded-xl border-2">
+                    `<div class="flex items-center justify-center w-32 h-32 text-6xl font-black ${getClassColor(cls.name)} rounded-2xl border-4">
                         ${cls.name}
                     </div>`
                 ).join('');
@@ -428,10 +428,10 @@
                 const totalSlots = 12;
                 const emptySlots = totalSlots - arrivedClasses.length;
                 const emptyList = Array(emptySlots).fill('').map(() => 
-                    `<div class="w-16 h-16"></div>`
+                    `<div class="w-32 h-32"></div>`
                 ).join('');
                 
-                const gradeRows = `<div class="grid grid-cols-4 grid-rows-3 gap-4">${arrivedList}${emptyList}</div>`;
+                const gradeRows = `<div class="grid grid-cols-4 grid-rows-3 gap-8 justify-items-center">${arrivedList}${emptyList}</div>`;
                 
                 pendingAlertDiv.innerHTML = `
                     <div class="bg-green-100 dark:bg-green-900/50 border-4 border-green-600 dark:border-green-500 rounded-xl p-6 shadow-2xl">
