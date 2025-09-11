@@ -13,7 +13,7 @@
 
         // 🔥 請將下面的設定改為您從Firebase複製的設定
         const firebaseConfig = {
-           apiKey: "AIzaSyAqLitpQ-W2EFVJb5ytlh_fFaXEfGdsOns",
+            apiKey: "AIzaSyAqLitpQ-W2EFVJb5ytlh_fFaXEfGdsOns",
             authDomain: "classroom-tracker-demo.firebaseapp.com",
             databaseURL: "https://classroom-tracker-demo-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "classroom-tracker-demo",
@@ -337,9 +337,64 @@
             updateStatistics();
         }
 
+        // 語音播報功能（廣東話）
+        function playArrivalAnnouncement(className, isArrived) {
+            // 檢查瀏覽器是否支援語音合成
+            if ('speechSynthesis' in window) {
+                try {
+                    // 停止之前的語音（如果有）
+                    window.speechSynthesis.cancel();
+                    
+                    // 創建廣東話語音訊息
+                    const message = isArrived ? `${className}班已經到咗` : `${className}班已經走咗`;
+                    const utterance = new SpeechSynthesisUtterance(message);
+                    
+                    // 設定廣東話語音參數
+                    utterance.lang = 'zh-HK';  // 香港粵語
+                    utterance.rate = 0.8;      // 語速稍慢一點
+                    utterance.pitch = 1.0;     // 正常音調
+                    utterance.volume = 1.0;    // 最大音量
+                    
+                    // 嘗試設定廣東話語音引擎
+                    const voices = window.speechSynthesis.getVoices();
+                    const cantonese = voices.find(voice => 
+                        voice.lang.includes('zh-HK') || 
+                        voice.lang.includes('yue') ||
+                        voice.name.toLowerCase().includes('cantonese') ||
+                        voice.name.toLowerCase().includes('hongkong')
+                    );
+                    
+                    if (cantonese) {
+                        utterance.voice = cantonese;
+                        console.log(`使用廣東話語音: ${cantonese.name}`);
+                    } else {
+                        console.log('未找到廣東話語音，使用預設語音');
+                    }
+                    
+                    // 播放語音
+                    window.speechSynthesis.speak(utterance);
+                    
+                    console.log(`廣東話語音播報: ${message}`);
+                } catch (error) {
+                    console.log('語音播報失敗:', error);
+                }
+            } else {
+                console.log('瀏覽器不支援語音合成');
+            }
+        }
+
         // 切換班級狀態
         async function toggleClassStatus(classId) {
-            classStatus[classId] = !classStatus[classId];
+            const oldStatus = classStatus[classId];
+            const newStatus = !oldStatus;
+            
+            classStatus[classId] = newStatus;
+            
+            // 播放語音通知
+            const className = classes.find(cls => cls.id === classId)?.name;
+            if (className) {
+                playArrivalAnnouncement(className, newStatus);
+            }
             
             // 立即更新UI
             renderClasses();
@@ -435,14 +490,14 @@
                 
                 pendingAlertDiv.innerHTML = `
                     <div class="bg-green-100 dark:bg-green-900/50 border-4 border-green-600 dark:border-green-500 rounded-xl p-6 shadow-2xl">
-                        <div class="flex items-center mb-6">
-                            <span class="text-8xl mr-6">✅</span>
-                            <div class="flex-1">
-                                <span class="text-6xl font-black text-green-900 dark:text-green-200 block mb-3">已到達的班級</span>
-                                <span class="px-6 py-3 text-3xl font-black bg-green-700 text-white rounded-xl shadow-lg">
-                                    ${arrivedClasses.length} 個班級
-                                </span>
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center">
+                                <span class="text-8xl mr-6">✅</span>
+                                <span class="text-6xl font-black text-green-900 dark:text-green-200">已到達的班級</span>
                             </div>
+                            <span class="px-6 py-3 text-4xl font-black bg-green-700 text-white rounded-xl shadow-lg">
+                                ${arrivedClasses.length} 個班級
+                            </span>
                         </div>
                         ${gradeRows}
                     </div>
