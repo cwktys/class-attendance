@@ -13,7 +13,7 @@
 
         // 🔥 請將下面的設定改為您從Firebase複製的設定
         const firebaseConfig = {
-            apiKey: "AIzaSyAqLitpQ-W2EFVJb5ytlh_fFaXEfGdsOns",
+         apiKey: "AIzaSyAqLitpQ-W2EFVJb5ytlh_fFaXEfGdsOns",
             authDomain: "classroom-tracker-demo.firebaseapp.com",
             databaseURL: "https://classroom-tracker-demo-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "classroom-tracker-demo",
@@ -337,7 +337,7 @@
             updateStatistics();
         }
 
-        // 語音播報功能（廣東話）
+        // 語音播報功能（根據設備選擇語言）
         function playArrivalAnnouncement(className, isArrived) {
             // 檢查瀏覽器是否支援語音合成
             if ('speechSynthesis' in window) {
@@ -345,36 +345,53 @@
                     // 停止之前的語音（如果有）
                     window.speechSynthesis.cancel();
                     
-                    // 創建廣東話語音訊息
-                    const message = isArrived ? `${className}班已經到咗` : `${className}班已經走咗`;
-                    const utterance = new SpeechSynthesisUtterance(message);
+                    // 檢測是否為桌面版（網頁版）
+                    const isDesktop = window.innerWidth >= 768; // md 斷點
                     
-                    // 設定廣東話語音參數
-                    utterance.lang = 'zh-HK';  // 香港粵語
-                    utterance.rate = 0.8;      // 語速稍慢一點
-                    utterance.pitch = 1.0;     // 正常音調
-                    utterance.volume = 1.0;    // 最大音量
+                    let message, language, rate;
                     
-                    // 嘗試設定廣東話語音引擎
-                    const voices = window.speechSynthesis.getVoices();
-                    const cantonese = voices.find(voice => 
-                        voice.lang.includes('zh-HK') || 
-                        voice.lang.includes('yue') ||
-                        voice.name.toLowerCase().includes('cantonese') ||
-                        voice.name.toLowerCase().includes('hongkong')
-                    );
-                    
-                    if (cantonese) {
-                        utterance.voice = cantonese;
-                        console.log(`使用廣東話語音: ${cantonese.name}`);
+                    if (isDesktop) {
+                        // 網頁版：使用廣東話
+                        message = isArrived ? `${className}班已經到咗` : `${className}班已經走咗`;
+                        language = 'zh-HK';
+                        rate = 0.8;
                     } else {
-                        console.log('未找到廣東話語音，使用預設語音');
+                        // 手機版：使用中文
+                        message = isArrived ? `${className}班已到達` : `${className}班已離開`;
+                        language = 'zh-TW';
+                        rate = 0.9;
+                    }
+                    
+                    const utterance = new SpeechSynthesisUtterance(message);
+                    utterance.lang = language;
+                    utterance.rate = rate;
+                    utterance.pitch = 1.0;
+                    utterance.volume = 1.0;
+                    
+                    if (isDesktop) {
+                        // 網頁版：嘗試設定廣東話語音引擎
+                        const voices = window.speechSynthesis.getVoices();
+                        const cantonese = voices.find(voice => 
+                            voice.lang.includes('zh-HK') || 
+                            voice.lang.includes('yue') ||
+                            voice.name.toLowerCase().includes('cantonese') ||
+                            voice.name.toLowerCase().includes('hongkong')
+                        );
+                        
+                        if (cantonese) {
+                            utterance.voice = cantonese;
+                            console.log(`網頁版使用廣東話語音: ${cantonese.name}`);
+                        } else {
+                            console.log('網頁版未找到廣東話語音，使用預設語音');
+                        }
+                    } else {
+                        console.log('手機版使用中文語音');
                     }
                     
                     // 播放語音
                     window.speechSynthesis.speak(utterance);
                     
-                    console.log(`廣東話語音播報: ${message}`);
+                    console.log(`語音播報 (${isDesktop ? '網頁版廣東話' : '手機版中文'}): ${message}`);
                 } catch (error) {
                     console.log('語音播報失敗:', error);
                 }
