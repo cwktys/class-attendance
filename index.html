@@ -13,13 +13,13 @@
 
         // 🔥 請將下面的設定改為您從Firebase複製的設定
         const firebaseConfig = {
-         apiKey: "AIzaSyAqLitpQ-W2EFVJb5ytlh_fFaXEfGdsOns",
-  authDomain: "classroom-tracker-demo.firebaseapp.com",
-  databaseURL: "https://classroom-tracker-demo-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "classroom-tracker-demo",
-  storageBucket: "classroom-tracker-demo.firebasestorage.app",
-  messagingSenderId: "889652567824",
-  appId: "1:889652567824:web:e9017d7dc072b0c8624f95",
+            apiKey: "AIzaSyAqLitpQ-W2EFVJb5ytlh_fFaXEfGdsOns",
+            authDomain: "classroom-tracker-demo.firebaseapp.com",
+            databaseURL: "https://classroom-tracker-demo-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "classroom-tracker-demo",
+            storageBucket: "classroom-tracker-demo.firebasestorage.app",
+            messagingSenderId: "889652567824",
+            appId: "1:889652567824:web:e9017d7dc072b0c8624f95"
 
         };
 
@@ -342,13 +342,12 @@
 
         // 渲染班級列表
         function renderClasses() {
-            const classGrid = document.getElementById('classGrid');
+            // 手機版班級列表
             const classGridMobile = document.getElementById('classGridMobile');
-            
-            const classCards = classes.map(cls => createClassCard(cls)).join('');
-            
-            if (classGrid) classGrid.innerHTML = classCards;
-            if (classGridMobile) classGridMobile.innerHTML = classCards;
+            if (classGridMobile) {
+                const classCards = classes.map(cls => createClassCard(cls)).join('');
+                classGridMobile.innerHTML = classCards;
+            }
             
             updateStatistics();
         }
@@ -388,10 +387,14 @@
             const arrived = Object.values(classStatus).filter(status => status).length;
             const pending = total - arrived;
 
-            // 桌面版
-            document.getElementById('totalClasses').textContent = total;
-            document.getElementById('arrivedClasses').textContent = arrived;
-            document.getElementById('pendingClasses').textContent = pending;
+            // 桌面版 - 檢查元素是否存在（簡化版沒有統計元素）
+            const totalClassesEl = document.getElementById('totalClasses');
+            const arrivedClassesEl = document.getElementById('arrivedClasses');
+            const pendingClassesEl = document.getElementById('pendingClasses');
+            
+            if (totalClassesEl) totalClassesEl.textContent = total;
+            if (arrivedClassesEl) arrivedClassesEl.textContent = arrived;
+            if (pendingClassesEl) pendingClassesEl.textContent = pending;
             
             // 手機版
             document.getElementById('totalClassesMobile').textContent = total;
