@@ -362,14 +362,11 @@
             updateStatistics();
         }
 
-        // 語音播報功能（根據設備選擇語言）
+        // 語音播報功能（根據設備選擇語言，優先女聲）
         function playArrivalAnnouncement(className, isArrived) {
             // 檢查瀏覽器是否支援語音合成
             if ('speechSynthesis' in window) {
                 try {
-                    // 停止之前的語音（如果有）
-                    window.speechSynthesis.cancel();
-                    
                     // 檢測是否為桌面版（網頁版）
                     const isDesktop = window.innerWidth >= 768; // md 斷點
                     
@@ -379,44 +376,109 @@
                         // 網頁版：使用廣東話
                         message = isArrived ? `${className}班已經到咗` : `${className}班已經走咗`;
                         language = 'zh-HK';
-                        rate = 0.8;
+                        rate = 0.7; // 放慢語速，避免被截斷
                     } else {
                         // 手機版：使用中文
                         message = isArrived ? `${className}班已到達` : `${className}班已離開`;
                         language = 'zh-TW';
-                        rate = 0.9;
+                        rate = 0.8; // 稍微放慢語速
                     }
                     
-                    const utterance = new SpeechSynthesisUtterance(message);
-                    utterance.lang = language;
-                    utterance.rate = rate;
-                    utterance.pitch = 1.0;
-                    utterance.volume = 1.0;
+                    // 等待語音引擎準備好
+                    const waitForVoices = () => {
+                        return new Promise((resolve) => {
+                            const voices = window.speechSynthesis.getVoices();
+                            if (voices.length > 0) {
+                                resolve(voices);
+                            } else {
+                                // 等待語音載入完成
+                                window.speechSynthesis.onvoiceschanged = () => {
+                                    resolve(window.speechSynthesis.getVoices());
+                                };
+                            }
+                        });
+                    };
                     
-                    if (isDesktop) {
-                        // 網頁版：嘗試設定廣東話語音引擎
-                        const voices = window.speechSynthesis.getVoices();
-                        const cantonese = voices.find(voice => 
-                            voice.lang.includes('zh-HK') || 
-                            voice.lang.includes('yue') ||
-                            voice.name.toLowerCase().includes('cantonese') ||
-                            voice.name.toLowerCase().includes('hongkong')
-                        );
-                        
-                        if (cantonese) {
-                            utterance.voice = cantonese;
-                            console.log(`網頁版使用廣東話語音: ${cantonese.name}`);
+                    waitForVoices().then((voices) => {
+                        // 只有當前面沒有語音在播放時才停止
+                        if (window.speechSynthesis.speaking) {
+                            window.speechSynthesis.cancel();
+                            // 等待一下確保完全停止
+                            setTimeout(() => {
+                                playVoice();
+                            }, 100);
                         } else {
-                            console.log('網頁版未找到廣東話語音，使用預設語音');
+                            playVoice();
                         }
-                    } else {
-                        console.log('手機版使用中文語音');
-                    }
+                        
+                        function playVoice() {
+                            const utterance = new SpeechSynthesisUtterance(message);
+                            utterance.lang = language;
+                            utterance.rate = rate;
+                            utterance.pitch = 1.1; // 稍微提高音調
+                            utterance.volume = 1.0;
+                            
+                            let selectedVoice = null;
+                            
+                            if (isDesktop) {
+                                // 網頁版：優先選擇廣東話女聲
+                                selectedVoice = voices.find(voice => 
+                                    (voice.lang.includes('zh-HK') || voice.lang.includes('yue')) &&
+                                    (voice.name.toLowerCase().includes('female') || 
+                                     voice.name.toLowerCase().includes('woman') ||
+                                     voice.name.toLowerCase().includes('佳') ||
+                                     voice.name.toLowerCase().includes('欣') ||
+                                     voice.name.toLowerCase().includes('美') ||
+                                     voice.name.toLowerCase().includes('麗'))
+                                );
+                                
+                                // 如果沒找到女聲，就找任何廣東話語音
+                                if (!selectedVoice) {
+                                    selectedVoice = voices.find(voice => 
+                                        voice.lang.includes('zh-HK') || 
+                                        voice.lang.includes('yue') ||
+                                        voice.name.toLowerCase().includes('cantonese') ||
+                                        voice.name.toLowerCase().includes('hongkong')
+                                    );
+                                }
+                            } else {
+                                // 手機版：優先選擇中文女聲
+                                selectedVoice = voices.find(voice => 
+                                    voice.lang.includes('zh') &&
+                                    (voice.name.toLowerCase().includes('female') || 
+                                     voice.name.toLowerCase().includes('woman') ||
+                                     voice.name.toLowerCase().includes('佳') ||
+                                     voice.name.toLowerCase().includes('欣') ||
+                                     voice.name.toLowerCase().includes('美') ||
+                                     voice.name.toLowerCase().includes('麗'))
+                                );
+                            }
+                            
+                            if (selectedVoice) {
+                                utterance.voice = selectedVoice;
+                                console.log(`使用${isDesktop ? '廣東話' : '中文'}女聲: ${selectedVoice.name}`);
+                            } else {
+                                console.log(`未找到${isDesktop ? '廣東話' : '中文'}女聲，使用預設語音`);
+                            }
+                            
+                            // 設定語音事件監聽
+                            utterance.onstart = () => {
+                                console.log(`開始播放語音: ${message}`);
+                            };
+                            
+                            utterance.onend = () => {
+                                console.log(`語音播放完成: ${message}`);
+                            };
+                            
+                            utterance.onerror = (error) => {
+                                console.log('語音播放錯誤:', error);
+                            };
+                            
+                            // 播放語音
+                            window.speechSynthesis.speak(utterance);
+                        }
+                    });
                     
-                    // 播放語音
-                    window.speechSynthesis.speak(utterance);
-                    
-                    console.log(`語音播報 (${isDesktop ? '網頁版廣東話' : '手機版中文'}): ${message}`);
                 } catch (error) {
                     console.log('語音播報失敗:', error);
                 }
