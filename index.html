@@ -13,7 +13,7 @@
 
         // 🔥 請將下面的設定改為您從Firebase複製的設定
         const firebaseConfig = {
-            apiKey: "AIzaSyAqLitpQ-W2EFVJb5ytlh_fFaXEfGdsOns",
+           apiKey: "AIzaSyAqLitpQ-W2EFVJb5ytlh_fFaXEfGdsOns",
             authDomain: "classroom-tracker-demo.firebaseapp.com",
             databaseURL: "https://classroom-tracker-demo-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "classroom-tracker-demo",
@@ -224,11 +224,36 @@
         // 設置 Firebase 監聽器
         function setupFirebaseListeners() {
             const statusRef = window.dbRef(window.database, 'classStatus');
+            let isFirstLoad = true;
+            
             window.dbOnValue(statusRef, (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
-                    classStatus = data;
+                    const newStatus = data;
+                    
+                    // 檢測狀態變化並播放語音（只針對網頁版）
+                    if (!isFirstLoad && window.innerWidth >= 768) {
+                        // 比較新舊狀態，找出變化的班級
+                        Object.keys(newStatus).forEach(classId => {
+                            const oldValue = classStatus[classId];
+                            const newValue = newStatus[classId];
+                            
+                            // 如果狀態有變化，播放語音
+                            if (oldValue !== newValue) {
+                                const className = classes.find(cls => cls.id === classId)?.name;
+                                if (className) {
+                                    // 延遲一點播放語音，確保UI更新完成
+                                    setTimeout(() => {
+                                        playArrivalAnnouncement(className, newValue);
+                                    }, 300);
+                                }
+                            }
+                        });
+                    }
+                    
+                    classStatus = newStatus;
                     renderClasses();
+                    isFirstLoad = false;
                 }
             });
         }
