@@ -13,7 +13,7 @@
 
         // 🔥 請將下面的設定改為您從Firebase複製的設定
         const firebaseConfig = {
-            apiKey: "AIzaSyAqLitpQ-W2EFVJb5ytlh_fFaXEfGdsOns",
+          apiKey: "AIzaSyAqLitpQ-W2EFVJb5ytlh_fFaXEfGdsOns",
             authDomain: "classroom-tracker-demo.firebaseapp.com",
             databaseURL: "https://classroom-tracker-demo-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "classroom-tracker-demo",
@@ -99,7 +99,7 @@
         🔴 離線
     </div>
 
-    <div class="w-full h-full">
+    <div class="container mx-auto px-2 py-2 max-w-7xl">
         <!-- 手機版布局 -->
         <div class="md:hidden">
             <!-- 手機版：頂部橫向布局 -->
@@ -162,16 +162,16 @@
         </div>
 
         <!-- 桌面版：專為1920x1080優化的全屏顯示版 -->
-        <div class="hidden md:flex flex-col w-screen h-screen overflow-hidden p-8 gap-8">
-            <!-- 頂部：校徽居中 - 1920x1200優化 -->
-            <div class="flex justify-center items-center" style="height: 240px;">
+        <div class="hidden md:flex flex-col h-screen max-h-screen overflow-hidden p-8 gap-8" style="width: 1920px; height: 1080px; margin: 0 auto;">
+            <!-- 頂部：校徽居中 - 1920x1080優化 -->
+            <div class="flex justify-center items-center" style="height: 200px;">
                 <img src="https://pfst.cf2.poecdn.net/base/image/d1bac803e09e2aa47fef77acb1020b7332c5512b872f9ac730ecee837ec17c8e?w=200&h=237" 
                      alt="校徽" 
                      class="w-48 h-56 object-contain">
             </div>
 
             <!-- 已到達班級顯示區域 - 充分利用1920x1080剩餘空間 -->
-            <div class="flex-1 w-full" id="pendingAlert">
+            <div class="flex-1 w-full max-w-none" id="pendingAlert" style="height: calc(1080px - 200px - 64px);">
                 <!-- 將由 JavaScript 動態生成 -->
             </div>
         </div>
@@ -577,9 +577,9 @@
                     return colors[grade] || 'bg-gray-300 text-gray-900 border-gray-400 dark:bg-gray-700/60 dark:text-gray-100 dark:border-gray-500';
                 };
 
-                // 專為1920x1200優化，更大的班級方塊和字體
+                // 專為1920x1080優化，更大的班級方塊和字體
                 const arrivedList = arrivedClasses.map(cls => 
-                    `<div class="flex items-center justify-center text-9xl font-black ${getClassColor(cls.name)} rounded-3xl border-8 shadow-2xl" style="width: 210px; height: 210px;">
+                    `<div class="flex items-center justify-center text-8xl font-black ${getClassColor(cls.name)} rounded-3xl border-8 shadow-2xl" style="width: 180px; height: 180px;">
                         ${cls.name}
                     </div>`
                 ).join('');
@@ -588,10 +588,10 @@
                 const totalSlots = 12;
                 const emptySlots = totalSlots - arrivedClasses.length;
                 const emptyList = Array(emptySlots).fill('').map(() => 
-                    `<div style="width: 210px; height: 210px;"></div>`
+                    `<div style="width: 180px; height: 180px;"></div>`
                 ).join('');
                 
-                const gradeRows = `<div class="grid grid-cols-4 grid-rows-3 justify-items-center items-center h-full" style="gap: 50px;">${arrivedList}${emptyList}</div>`;
+                const gradeRows = `<div class="grid grid-cols-4 grid-rows-3 justify-items-center items-center h-full" style="gap: 40px;">${arrivedList}${emptyList}</div>`;
                 
                 pendingAlertDiv.innerHTML = `
                     <div class="bg-green-100 dark:bg-green-900/50 border-4 border-green-600 dark:border-green-500 rounded-xl p-6 shadow-2xl">
