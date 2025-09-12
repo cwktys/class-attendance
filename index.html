@@ -20,7 +20,8 @@
             storageBucket: "classroom-tracker-demo.firebasestorage.app",
             messagingSenderId: "889652567824",
             appId: "1:889652567824:web:e9017d7dc072b0c8624f95"
-
+SENDER ID",
+            appId: "請貼上您的APP ID"
         };
 
         // 初始化 Firebase
@@ -160,17 +161,17 @@
             </div>
         </div>
 
-        <!-- 桌面版：純顯示版 - 只顯示校徽和已到達班級，針對1920x1080優化 -->
-        <div class="hidden md:flex flex-col h-screen max-h-screen overflow-hidden p-6 gap-6">
-            <!-- 頂部：校徽居中 -->
-            <div class="flex justify-center items-center">
+        <!-- 桌面版：專為1920x1080優化的全屏顯示版 -->
+        <div class="hidden md:flex flex-col h-screen max-h-screen overflow-hidden p-8 gap-8" style="width: 1920px; height: 1080px; margin: 0 auto;">
+            <!-- 頂部：校徽居中 - 1920x1080優化 -->
+            <div class="flex justify-center items-center" style="height: 200px;">
                 <img src="https://pfst.cf2.poecdn.net/base/image/d1bac803e09e2aa47fef77acb1020b7332c5512b872f9ac730ecee837ec17c8e?w=200&h=237" 
                      alt="校徽" 
-                     class="w-40 h-48 object-contain">
+                     class="w-48 h-56 object-contain">
             </div>
 
-            <!-- 已到達班級顯示區域 - 填滿剩餘空間，針對1920x1080優化 -->
-            <div class="flex-1 w-full" id="pendingAlert">
+            <!-- 已到達班級顯示區域 - 充分利用1920x1080剩餘空間 -->
+            <div class="flex-1 w-full max-w-none" id="pendingAlert" style="height: calc(1080px - 200px - 64px);">
                 <!-- 將由 JavaScript 動態生成 -->
             </div>
         </div>
@@ -576,9 +577,9 @@
                     return colors[grade] || 'bg-gray-300 text-gray-900 border-gray-400 dark:bg-gray-700/60 dark:text-gray-100 dark:border-gray-500';
                 };
 
-                // 針對1920x1080優化，超大班級名稱字體（接近校徽大小）
+                // 專為1920x1080優化，更大的班級方塊和字體
                 const arrivedList = arrivedClasses.map(cls => 
-                    `<div class="flex items-center justify-center w-32 h-32 text-6xl font-black ${getClassColor(cls.name)} rounded-2xl border-4">
+                    `<div class="flex items-center justify-center text-8xl font-black ${getClassColor(cls.name)} rounded-3xl border-8 shadow-2xl" style="width: 180px; height: 180px;">
                         ${cls.name}
                     </div>`
                 ).join('');
@@ -587,10 +588,10 @@
                 const totalSlots = 12;
                 const emptySlots = totalSlots - arrivedClasses.length;
                 const emptyList = Array(emptySlots).fill('').map(() => 
-                    `<div class="w-32 h-32"></div>`
+                    `<div style="width: 180px; height: 180px;"></div>`
                 ).join('');
                 
-                const gradeRows = `<div class="grid grid-cols-4 grid-rows-3 gap-8 justify-items-center">${arrivedList}${emptyList}</div>`;
+                const gradeRows = `<div class="grid grid-cols-4 grid-rows-3 justify-items-center items-center h-full" style="gap: 40px;">${arrivedList}${emptyList}</div>`;
                 
                 pendingAlertDiv.innerHTML = `
                     <div class="bg-green-100 dark:bg-green-900/50 border-4 border-green-600 dark:border-green-500 rounded-xl p-6 shadow-2xl">
