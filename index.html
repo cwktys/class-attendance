@@ -13,7 +13,7 @@
 
         // 🔥 請將下面的設定改為您從Firebase複製的設定
         const firebaseConfig = {
-           apiKey: "AIzaSyAqLitpQ-W2EFVJb5ytlh_fFaXEfGdsOns",
+            apiKey: "AIzaSyAqLitpQ-W2EFVJb5ytlh_fFaXEfGdsOns",
             authDomain: "classroom-tracker-demo.firebaseapp.com",
             databaseURL: "https://classroom-tracker-demo-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "classroom-tracker-demo",
@@ -190,16 +190,19 @@
             }
         });
 
-        // 班級資料
+        // 班級資料 - 按年級順序排列（第一行1年級，第二行2年級，第三行3年級）
         const classes = [
+            // 第一行：1年級
             { id: 'class1A', name: '1A', grade: 1 },
             { id: 'class1B', name: '1B', grade: 1 },
             { id: 'class1C', name: '1C', grade: 1 },
             { id: 'class1D', name: '1D', grade: 1 },
+            // 第二行：2年級
             { id: 'class2A', name: '2A', grade: 2 },
             { id: 'class2B', name: '2B', grade: 2 },
             { id: 'class2C', name: '2C', grade: 2 },
             { id: 'class2D', name: '2D', grade: 2 },
+            // 第三行：3年級
             { id: 'class3A', name: '3A', grade: 3 },
             { id: 'class3B', name: '3B', grade: 3 },
             { id: 'class3C', name: '3C', grade: 3 },
@@ -373,17 +376,10 @@
                     
                     let message, language, rate;
                     
-                    if (isDesktop) {
-                        // 網頁版：使用廣東話
-                        message = isArrived ? `${className}班已經到咗` : `${className}班已經走咗`;
-                        language = 'zh-HK';
-                        rate = 0.7; // 放慢語速，避免被截斷
-                    } else {
-                        // 手機版：使用中文
-                        message = isArrived ? `${className}班已到達` : `${className}班已離開`;
-                        language = 'zh-TW';
-                        rate = 0.8; // 稍微放慢語速
-                    }
+                    // 統一使用廣東話語音播報
+                    message = isArrived ? `${className}班已到達` : `${className}班已離開`;
+                    language = 'zh-HK';
+                    rate = 0.7; // 放慢語速，避免被截斷
                     
                     // 等待語音引擎準備好
                     const waitForVoices = () => {
