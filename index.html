@@ -13,15 +13,13 @@
 
         // 🔥 請將下面的設定改為您從Firebase複製的設定
         const firebaseConfig = {
-            apiKey: "AIzaSyAqLitpQ-W2EFVJb5ytlh_fFaXEfGdsOns",
+       apiKey: "AIzaSyAqLitpQ-W2EFVJb5ytlh_fFaXEfGdsOns",
             authDomain: "classroom-tracker-demo.firebaseapp.com",
             databaseURL: "https://classroom-tracker-demo-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "classroom-tracker-demo",
             storageBucket: "classroom-tracker-demo.firebasestorage.app",
             messagingSenderId: "889652567824",
             appId: "1:889652567824:web:e9017d7dc072b0c8624f95"
-,
-            appId: "請貼上您的APP ID"
         };
 
         // 初始化 Firebase
@@ -366,122 +364,193 @@
             updateStatistics();
         }
 
-        // 語音播報功能（根據設備選擇語言，優先女聲）
+        // 語音隊列管理
+        let voiceQueue = [];
+        let isPlayingVoice = false;
+
+        // 強化版語音播報功能
         function playArrivalAnnouncement(className, isArrived) {
             // 檢查瀏覽器是否支援語音合成
-            if ('speechSynthesis' in window) {
+            if (!('speechSynthesis' in window)) {
+                console.log('瀏覽器不支援語音合成');
+                return;
+            }
+
+            const message = isArrived ? `${className}班已到達` : `${className}班已離開`;
+            
+            // 加入語音隊列
+            voiceQueue.push(message);
+            
+            // 如果沒有正在播放，開始處理隊列
+            if (!isPlayingVoice) {
+                processVoiceQueue();
+            }
+        }
+
+        // 處理語音隊列
+        function processVoiceQueue() {
+            if (voiceQueue.length === 0) {
+                isPlayingVoice = false;
+                return;
+            }
+
+            isPlayingVoice = true;
+            const message = voiceQueue.shift();
+            
+            // 強化版語音播放
+            playVoiceWithRetry(message, 3); // 最多重試3次
+        }
+
+        // 帶重試機制的語音播放
+        function playVoiceWithRetry(message, maxRetries) {
+            let retryCount = 0;
+            
+            function attemptPlay() {
                 try {
-                    // 檢測是否為桌面版（網頁版）
-                    const isDesktop = window.innerWidth >= 768; // md 斷點
+                    // 強制停止之前的語音
+                    if (window.speechSynthesis.speaking) {
+                        window.speechSynthesis.cancel();
+                    }
                     
-                    let message, language, rate;
-                    
-                    // 統一使用廣東話語音播報
-                    message = isArrived ? `${className}班已到達` : `${className}班已離開`;
-                    language = 'zh-HK';
-                    rate = 0.7; // 放慢語速，避免被截斷
-                    
-                    // 等待語音引擎準備好
+                    // 等待語音引擎準備好（更長時間）
                     const waitForVoices = () => {
-                        return new Promise((resolve) => {
-                            const voices = window.speechSynthesis.getVoices();
-                            if (voices.length > 0) {
-                                resolve(voices);
-                            } else {
-                                // 等待語音載入完成
-                                window.speechSynthesis.onvoiceschanged = () => {
-                                    resolve(window.speechSynthesis.getVoices());
-                                };
-                            }
+                        return new Promise((resolve, reject) => {
+                            let attempts = 0;
+                            const maxAttempts = 20; // 增加嘗試次數
+                            
+                            const checkVoices = () => {
+                                const voices = window.speechSynthesis.getVoices();
+                                attempts++;
+                                
+                                if (voices.length > 0) {
+                                    resolve(voices);
+                                } else if (attempts >= maxAttempts) {
+                                    reject(new Error('語音引擎載入超時'));
+                                } else {
+                                    setTimeout(checkVoices, 100); // 每100ms檢查一次
+                                }
+                            };
+                            
+                            // 立即檢查一次
+                            checkVoices();
+                            
+                            // 同時監聽語音變化事件
+                            window.speechSynthesis.onvoiceschanged = () => {
+                                const voices = window.speechSynthesis.getVoices();
+                                if (voices.length > 0) {
+                                    resolve(voices);
+                                }
+                            };
                         });
                     };
                     
                     waitForVoices().then((voices) => {
-                        // 只有當前面沒有語音在播放時才停止
-                        if (window.speechSynthesis.speaking) {
-                            window.speechSynthesis.cancel();
-                            // 等待一下確保完全停止
-                            setTimeout(() => {
-                                playVoice();
-                            }, 100);
+                        // 延遲確保前一個語音完全停止
+                        setTimeout(() => {
+                            playVoiceNow(message, voices);
+                        }, 200); // 增加延遲時間
+                    }).catch((error) => {
+                        console.log('語音引擎載入失敗:', error);
+                        if (retryCount < maxRetries) {
+                            retryCount++;
+                            console.log(`語音播放重試 ${retryCount}/${maxRetries}`);
+                            setTimeout(attemptPlay, 500); // 延遲重試
                         } else {
-                            playVoice();
-                        }
-                        
-                        function playVoice() {
-                            const utterance = new SpeechSynthesisUtterance(message);
-                            utterance.lang = language;
-                            utterance.rate = rate;
-                            utterance.pitch = 1.1; // 稍微提高音調
-                            utterance.volume = 1.0;
-                            
-                            let selectedVoice = null;
-                            
-                            if (isDesktop) {
-                                // 網頁版：優先選擇廣東話女聲
-                                selectedVoice = voices.find(voice => 
-                                    (voice.lang.includes('zh-HK') || voice.lang.includes('yue')) &&
-                                    (voice.name.toLowerCase().includes('female') || 
-                                     voice.name.toLowerCase().includes('woman') ||
-                                     voice.name.toLowerCase().includes('佳') ||
-                                     voice.name.toLowerCase().includes('欣') ||
-                                     voice.name.toLowerCase().includes('美') ||
-                                     voice.name.toLowerCase().includes('麗'))
-                                );
-                                
-                                // 如果沒找到女聲，就找任何廣東話語音
-                                if (!selectedVoice) {
-                                    selectedVoice = voices.find(voice => 
-                                        voice.lang.includes('zh-HK') || 
-                                        voice.lang.includes('yue') ||
-                                        voice.name.toLowerCase().includes('cantonese') ||
-                                        voice.name.toLowerCase().includes('hongkong')
-                                    );
-                                }
-                            } else {
-                                // 手機版：優先選擇中文女聲
-                                selectedVoice = voices.find(voice => 
-                                    voice.lang.includes('zh') &&
-                                    (voice.name.toLowerCase().includes('female') || 
-                                     voice.name.toLowerCase().includes('woman') ||
-                                     voice.name.toLowerCase().includes('佳') ||
-                                     voice.name.toLowerCase().includes('欣') ||
-                                     voice.name.toLowerCase().includes('美') ||
-                                     voice.name.toLowerCase().includes('麗'))
-                                );
-                            }
-                            
-                            if (selectedVoice) {
-                                utterance.voice = selectedVoice;
-                                console.log(`使用${isDesktop ? '廣東話' : '中文'}女聲: ${selectedVoice.name}`);
-                            } else {
-                                console.log(`未找到${isDesktop ? '廣東話' : '中文'}女聲，使用預設語音`);
-                            }
-                            
-                            // 設定語音事件監聽
-                            utterance.onstart = () => {
-                                console.log(`開始播放語音: ${message}`);
-                            };
-                            
-                            utterance.onend = () => {
-                                console.log(`語音播放完成: ${message}`);
-                            };
-                            
-                            utterance.onerror = (error) => {
-                                console.log('語音播放錯誤:', error);
-                            };
-                            
-                            // 播放語音
-                            window.speechSynthesis.speak(utterance);
+                            console.log('語音播放失敗，已達最大重試次數');
+                            processVoiceQueue(); // 繼續處理隊列
                         }
                     });
                     
                 } catch (error) {
-                    console.log('語音播報失敗:', error);
+                    console.log('語音播放異常:', error);
+                    if (retryCount < maxRetries) {
+                        retryCount++;
+                        setTimeout(attemptPlay, 500);
+                    } else {
+                        processVoiceQueue();
+                    }
                 }
-            } else {
-                console.log('瀏覽器不支援語音合成');
             }
+            
+            attemptPlay();
+        }
+
+        // 實際播放語音
+        function playVoiceNow(message, voices) {
+            const utterance = new SpeechSynthesisUtterance(message);
+            utterance.lang = 'zh-HK';
+            utterance.rate = 0.6; // 進一步放慢語速
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+            
+            // 選擇廣東話語音
+            let selectedVoice = null;
+            
+            // 優先選擇廣東話女聲
+            selectedVoice = voices.find(voice => 
+                (voice.lang.includes('zh-HK') || voice.lang.includes('yue')) &&
+                (voice.name.toLowerCase().includes('female') || 
+                 voice.name.toLowerCase().includes('woman') ||
+                 voice.name.toLowerCase().includes('佳') ||
+                 voice.name.toLowerCase().includes('欣') ||
+                 voice.name.toLowerCase().includes('美') ||
+                 voice.name.toLowerCase().includes('麗'))
+            );
+            
+            // 如果沒找到女聲，就找任何廣東話語音
+            if (!selectedVoice) {
+                selectedVoice = voices.find(voice => 
+                    voice.lang.includes('zh-HK') || 
+                    voice.lang.includes('yue') ||
+                    voice.name.toLowerCase().includes('cantonese') ||
+                    voice.name.toLowerCase().includes('hongkong')
+                );
+            }
+            
+            // 如果還是沒找到，使用任何中文語音
+            if (!selectedVoice) {
+                selectedVoice = voices.find(voice => 
+                    voice.lang.includes('zh')
+                );
+            }
+            
+            if (selectedVoice) {
+                utterance.voice = selectedVoice;
+                console.log(`使用語音: ${selectedVoice.name}`);
+            } else {
+                console.log('使用預設語音');
+            }
+            
+            // 設定語音事件監聽
+            utterance.onstart = () => {
+                console.log(`開始播放語音: ${message}`);
+            };
+            
+            utterance.onend = () => {
+                console.log(`語音播放完成: ${message}`);
+                // 播放完成後處理下一個
+                setTimeout(() => {
+                    processVoiceQueue();
+                }, 300); // 短暫延遲避免衝突
+            };
+            
+            utterance.onerror = (error) => {
+                console.log('語音播放錯誤:', error);
+                // 出錯時也要繼續處理隊列
+                setTimeout(() => {
+                    processVoiceQueue();
+                }, 300);
+            };
+            
+            // 使用 setTimeout 確保語音能正常播放
+            setTimeout(() => {
+                try {
+                    window.speechSynthesis.speak(utterance);
+                } catch (error) {
+                    console.log('語音播放調用失敗:', error);
+                    processVoiceQueue();
+                }
+            }, 100);
         }
 
         // 切換班級狀態
