@@ -13,13 +13,14 @@
 
         // 🔥 請將下面的設定改為您從Firebase複製的設定
         const firebaseConfig = {
-       apiKey: "AIzaSyAqLitpQ-W2EFVJb5ytlh_fFaXEfGdsOns",
+           apiKey: "AIzaSyAqLitpQ-W2EFVJb5ytlh_fFaXEfGdsOns",
             authDomain: "classroom-tracker-demo.firebaseapp.com",
             databaseURL: "https://classroom-tracker-demo-default-rtdb.asia-southeast1.firebasedatabase.app",
             projectId: "classroom-tracker-demo",
             storageBucket: "classroom-tracker-demo.firebasestorage.app",
             messagingSenderId: "889652567824",
             appId: "1:889652567824:web:e9017d7dc072b0c8624f95"
+
         };
 
         // 初始化 Firebase
@@ -367,12 +368,120 @@
         // 語音隊列管理
         let voiceQueue = [];
         let isPlayingVoice = false;
+        let voiceSupported = null;
+        let browserVoiceCapability = null;
+
+        // 檢測瀏覽器語音支援能力
+        function detectVoiceSupport() {
+            try {
+                // 基本支援檢測
+                if (!('speechSynthesis' in window)) {
+                    voiceSupported = false;
+                    browserVoiceCapability = 'not_supported';
+                    console.log('❌ 瀏覽器不支援語音合成API');
+                    showVoiceStatusMessage('您的瀏覽器不支援語音播報功能', 'warning');
+                    return false;
+                }
+
+                // Chrome版本檢測
+                const userAgent = navigator.userAgent;
+                const chromeMatch = userAgent.match(/Chrome\/(\d+)/);
+                
+                if (chromeMatch) {
+                    const chromeVersion = parseInt(chromeMatch[1]);
+                    console.log(`Chrome版本: ${chromeVersion}`);
+                    
+                    if (chromeVersion < 33) {
+                        voiceSupported = false;
+                        browserVoiceCapability = 'chrome_too_old';
+                        console.log('❌ Chrome版本過舊，不支援語音合成');
+                        showVoiceStatusMessage(`Chrome版本過舊 (v${chromeVersion})，請更新至v33以上以支援語音播報`, 'error');
+                        return false;
+                    } else if (chromeVersion < 71) {
+                        browserVoiceCapability = 'chrome_limited';
+                        console.log('⚠️ Chrome版本較舊，語音功能可能不穩定');
+                        showVoiceStatusMessage(`Chrome版本較舊 (v${chromeVersion})，語音功能可能不穩定`, 'warning');
+                    } else {
+                        browserVoiceCapability = 'chrome_good';
+                        console.log('✅ Chrome版本良好，支援完整語音功能');
+                    }
+                }
+
+                // 功能性測試
+                try {
+                    const testUtterance = new SpeechSynthesisUtterance('');
+                    if (typeof testUtterance.addEventListener === 'function') {
+                        browserVoiceCapability = browserVoiceCapability || 'basic_support';
+                        voiceSupported = true;
+                        console.log('✅ 語音合成API功能正常');
+                        return true;
+                    }
+                } catch (error) {
+                    console.log('❌ 語音合成API功能異常:', error);
+                    voiceSupported = false;
+                    browserVoiceCapability = 'api_error';
+                    showVoiceStatusMessage('語音合成API功能異常', 'error');
+                    return false;
+                }
+
+                voiceSupported = true;
+                return true;
+
+            } catch (error) {
+                console.log('❌ 語音支援檢測失敗:', error);
+                voiceSupported = false;
+                browserVoiceCapability = 'detection_failed';
+                showVoiceStatusMessage('語音功能檢測失敗', 'error');
+                return false;
+            }
+        }
+
+        // 顯示語音狀態訊息
+        function showVoiceStatusMessage(message, type) {
+            // 只在桌面版顯示語音狀態
+            if (window.innerWidth < 768) return;
+            
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `voice-status-message ${type}`;
+            statusDiv.style.cssText = `
+                position: fixed;
+                top: 50px;
+                right: 10px;
+                padding: 8px 12px;
+                border-radius: 8px;
+                font-size: 12px;
+                font-weight: 500;
+                z-index: 1001;
+                max-width: 300px;
+                word-wrap: break-word;
+                ${type === 'error' ? 'background-color: #FEF2F2; color: #DC2626; border: 1px solid #FECACA;' : ''}
+                ${type === 'warning' ? 'background-color: #FFFBEB; color: #D97706; border: 1px solid #FED7AA;' : ''}
+                ${type === 'success' ? 'background-color: #F0FDF4; color: #16A34A; border: 1px solid #BBF7D0;' : ''}
+            `;
+            statusDiv.textContent = message;
+            
+            document.body.appendChild(statusDiv);
+            
+            // 3秒後自動移除
+            setTimeout(() => {
+                if (statusDiv.parentNode) {
+                    statusDiv.parentNode.removeChild(statusDiv);
+                }
+            }, 3000);
+        }
 
         // 強化版語音播報功能
         function playArrivalAnnouncement(className, isArrived) {
-            // 檢查瀏覽器是否支援語音合成
-            if (!('speechSynthesis' in window)) {
-                console.log('瀏覽器不支援語音合成');
+            // 初次檢測語音支援
+            if (voiceSupported === null) {
+                if (!detectVoiceSupport()) {
+                    return;
+                }
+            }
+
+            // 如果語音不支援，直接返回
+            if (!voiceSupported) {
+                console.log('語音不支援，跳過播報');
                 return;
             }
 
